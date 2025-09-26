@@ -1,0 +1,130 @@
+import 'package:english_words/english_words.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => MyAppState(),
+      child: MaterialApp(
+        title: 'Namer App',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 9, 248, 29)),
+        ),
+        home: MyHomePage(),
+      ),
+    );
+  }
+}
+
+class MyAppState extends ChangeNotifier {
+  var current = WordPair.random();
+   void getNext() {
+   
+    current = WordPair.random();
+    notifyListeners();
+   }
+  
+  var favorites = <WordPair>[];
+  void toggleFavorite() {
+    if (favorites.contains(current)) {
+      //print ("remove " +  (current.asLowerCase));
+      favorites.remove(current);
+    } else {
+      //print ("add " +  (current.asLowerCase));
+      favorites.add(current);     
+    }
+    notifyListeners();
+    //print("Favorites: $favorites");
+  }   
+  }
+
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var pair = appState.current;
+    IconData icon;
+    if (appState.favorites.contains(pair)) {
+      print("contatains" + pair.asLowerCase);
+      //print(pair);
+      icon = Icons.favorite;
+    } else {
+      icon = Icons.favorite_border;
+      //print(pair);
+    }
+
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            BigCard(pair: pair),
+            SizedBox(height: 10),
+            Row(
+              mainAxisSize: MainAxisSize.min,   // ← Add this.
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    appState.getNext();
+                    print("Next Pressed");
+                  },
+                  child: Text('Next'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    appState.toggleFavorite();
+                    print("Favorite Pressed");
+                    print(icon);
+                    
+                  },
+                  icon: Icon(icon),
+                  label : Text('Favorites'),
+                ),
+              ],
+            ),  
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BigCard extends StatelessWidget {
+  const BigCard({
+    super.key,
+    required this.pair,
+  });
+
+  final WordPair pair;
+
+  @override
+  Widget build(BuildContext context) {
+    var theme = Theme.of(context);
+    final style = theme.textTheme.displayMedium!.copyWith(
+      color: theme.colorScheme.onPrimary,
+    );
+    return Card(
+      color: theme.colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        // ↓ Make the following change.
+        child: Text(
+          pair.asLowerCase,
+          style: style,
+          //semanticsLabel: "${pair.first} ${pair.second}",
+          semanticsLabel: pair.asPascalCase,
+      ),
+      ),
+    );
+  }
+}
