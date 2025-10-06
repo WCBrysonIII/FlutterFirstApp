@@ -48,56 +48,141 @@ class MyAppState extends ChangeNotifier {
   }
 
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+var selectedIndex = 0;
+class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair = appState.current;
-    IconData icon;
-    if (appState.favorites.contains(pair)) {
-      print("contatains" + pair.asLowerCase);
-      //print(pair);
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
-      //print(pair);
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+      case 1:
+        page = FavoritesPage();
+      case 2:
+        page = Placeholder();
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
     }
-
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            BigCard(pair: pair),
-            SizedBox(height: 10),
-            Row(
-              mainAxisSize: MainAxisSize.min,   // ← Add this.
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    appState.getNext();
-                    print("Next Pressed");
-                  },
-                  child: Text('Next'),
+      body: Row(
+        children: [
+          SafeArea(
+            child: NavigationRail(
+              extended: false,
+              destinations: [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home),
+                  label: Text('Home'),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    appState.toggleFavorite();
-                    print("Favorite Pressed");
-                    print(icon);
-                    
-                  },
-                  icon: Icon(icon),
-                  label : Text('Favorites'),
+                NavigationRailDestination(
+                  icon: Icon(Icons.favorite),
+                  label: Text('Favorites'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.clear),
+                  label: Text('Clear'),
                 ),
               ],
-            ),  
-          ],
-        ),
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (value) {
+                setState(() {
+                  selectedIndex = value;
+                });                
+              },
+            ),
+          ),
+          Expanded(
+            child: Container(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: page,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+class FavoritesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    if (appState.favorites.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+    
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text('You have '
+              '${appState.favorites.length} favorites:'),
+        ),
+        for (var pair in appState.favorites)
+          ListTile(
+            leading: Icon(Icons.favorite),
+            title: Text(pair.asLowerCase),
+            trailing: Icon(Icons.delete),
+            onTap: () {
+              print("remove " + pair.asLowerCase);
+              appState.favorites.remove (pair);
+            },
+          ),
+      ],
+    );
+  }
+}
+class GeneratorPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var pair = appState.current;
+
+    IconData icon;
+    if (appState.favorites.contains(pair)) {
+      icon = Icons.favorite;
+    } else {
+      icon = Icons.favorite_border;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          BigCard(pair: pair),
+          SizedBox(height: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  appState.toggleFavorite();
+                },
+                icon: Icon(icon),
+                label: Text('Like'),
+              ),
+              SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  appState.getNext();
+                },
+                child: Text('Next'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class BigCard extends StatelessWidget {
   const BigCard({
